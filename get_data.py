@@ -12,4 +12,4 @@ df = stats.get_data_frames()[0]
 print(df.head())
 print(df.columns.tolist())
 
-df.to_csv("data/nba_player_stats_2025_26.cvs", index=False)
+df.to_csv("data/nba_player_stats_2025_26.csv", index=False)
