@@ -53,4 +53,62 @@ fig = px.scatter(
 
 fig.update_yaxes(tickformat=".0%")
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")
+
+#calculate scoring metrics
+scorers_df["THREE_POINT_ATTEMPT_RATE"] = (
+    scorers_df["FG3A"] / scorers_df["FGA"]
+)
+
+scorers_df["FREE_THROW_RATE"] = (
+    scorers_df["FTA"] / scorers_df["FGA"]
+)
+
+scorers_df["FG2_PCT"] = (
+    (scorers_df["FGM"] - scorers_df["FG3M"])
+    / (scorers_df["FGA"] - scorers_df["FG3A"])
+)
+
+st.header("Factors Associated with Scoring Efficiency")
+
+correlations = {
+    "2P%": scorers_df["FG2_PCT"].corr(scorers_df["TS_PCT"]),
+    "3P%": scorers_df["FG3_PCT"].corr(scorers_df["TS_PCT"]),
+    "FT%": scorers_df["FT_PCT"].corr(scorers_df["TS_PCT"]),
+    "3PA Rate": scorers_df["THREE_POINT_ATTEMPT_RATE"].corr(scorers_df["TS_PCT"]),
+    "FT Rate": scorers_df["FREE_THROW_RATE"].corr(scorers_df["TS_PCT"]),
+    "PPG": scorers_df["PTS_PER_GAME"].corr(scorers_df["TS_PCT"])
+}
+
+correlation_df = pd.DataFrame(
+    list(correlations.items()),
+    columns=["Metric", "Correlation"]
+)
+
+st.write(correlation_df)
+
+correlation_df = correlation_df.sort_values(
+    "Correlation",
+    ascending=True
+)
+
+correlation_fig = px.bar(
+    correlation_df,
+    x="Correlation",
+    y="Metric",
+    orientation="h",
+    title="Correlation with True Shooting Percentage"
+)
+
+correlation_fig.add_vline(x=0)
+
+st.plotly_chart(correlation_fig, width="stretch")
+
+st.write(
+    """
+    Two-point percentage has the strongest positive association with true shooting percentage
+    in this sample, followed by free-throw rate. Points per game has a weaker positive
+    relationship with scoring efficiency, while three-point attempt rate has a slight
+    negative relationship.
+    """
+)
