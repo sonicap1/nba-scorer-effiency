@@ -1,0 +1,56 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+#load NBA data
+df = pd.read_csv("data/nba_player_stats_2025_26.csv")
+
+st.title("What Makes and Efficient NBA Scorer")
+
+st.write(
+    "An interactive analysis of scoring efficiency among NBA players during the 2025-26 season."
+)
+
+st.write(df.head())
+
+#create PPG
+df["PTS_PER_GAME"] = df["PTS"] / df["GP"]
+
+#500 mins played restriction
+qualified_df = df[df["MIN"] >= 500].copy()
+
+#calculate TS%
+qualified_df["TS_PCT"] = qualified_df["PTS"] / (
+    2 * (qualified_df["FGA"] + 0.44 * qualified_df["FTA"])
+)
+
+#15 PPG restriction
+scorers_df = qualified_df[
+    qualified_df["PTS_PER_GAME"] >= 15
+].copy()
+
+st.write("Players in analysis:", len(scorers_df))
+
+st.header("Scoring Volume vs. Efficiency")
+
+fig = px.scatter(
+    scorers_df,
+    x="PTS_PER_GAME",
+    y="TS_PCT",
+    hover_name="PLAYER_NAME",
+    hover_data={
+        "TEAM_ABBREVIATION": True,
+        "PTS_PER_GAME": ":.1f",
+        "TS_PCT": ":.3f"
+    },
+    labels={
+        "PTS_PER_GAME": "Points Per Game",
+        "TS_PCT": "True Shooting Percentage",
+        "TEAM_ABBREVIATION": "Team"
+    },
+    title="Points Per Game vs. True Shooting Percentage"
+)
+
+fig.update_yaxes(tickformat=".0%")
+
+st.plotly_chart(fig, use_container_width=True)
