@@ -112,3 +112,104 @@ st.write(
     negative relationship.
     """
 )
+
+st.header("Player Scoring Profiles")
+
+selected_player = st.selectbox(
+    "Selecr a player:",
+    sorted(scorers_df["PLAYER_NAME"].unique())
+)
+
+st.write("Selected player:", selected_player)
+
+#player scoring profiles
+profile_columns = [
+    "FG2_PCT",
+    "FG3_PCT",
+    "FT_PCT",
+    "THREE_POINT_ATTEMPT_RATE",
+    "FREE_THROW_RATE"
+]
+
+profile_means = scorers_df[profile_columns].mean()
+profile_stds = scorers_df[profile_columns].std()
+
+selected_profile = scorers_df[
+    scorers_df["PLAYER_NAME"] == selected_player
+][profile_columns].iloc[0]
+
+selected_zscores = (
+    selected_profile - profile_means
+) / profile_stds
+
+profile_df = pd.DataFrame({
+    "Metric": [
+        "2P%",
+        "3P%",
+        "FT%",
+        "3PA Rate",
+        "FT Rate"
+    ],
+    "Z-Score": selected_zscores.values
+})
+
+profile_fig = px.bar(
+    profile_df,
+    x="Metric",
+    y="Z-Score",
+    title=f"{selected_player} Scoring Profile"
+)
+
+profile_fig.add_hline(y=0)
+
+st.plotly_chart(profile_fig, width="stretch")
+
+#compare scoring profiles
+st.header("Compare Scoring Profiles")
+
+selected_players = st.multiselect(
+    "Select players to compare:",
+    sorted(scorers_df["PLAYER_NAME"].unique()),
+)
+
+if selected_players:
+
+    comparison_rows = []
+
+    for player in selected_players:
+
+        player_profile = scorers_df[
+            scorers_df["PLAYER_NAME"] == player
+        ][profile_columns].iloc[0]
+
+        player_zscores = (
+            player_profile - profile_means
+        ) / profile_stds
+
+        for metric, zscore in zip(
+            ["2P%", "3P%", "FT%", "3PA Rate", "FT Rate"],
+            player_zscores.values
+        ):
+            comparison_rows.append({
+                "PLAYER_NAME": player,
+                "Metric": metric,
+                "Z-Score": zscore
+            })
+
+    comparison_df = pd.DataFrame(comparison_rows)
+
+    comparison_fig = px.bar(
+        comparison_df,
+        x="Metric",
+        y="Z-Score",
+        color="PLAYER_NAME",
+        barmode="group",
+        title="Player Scoring Profile Comparison"
+    )
+
+    comparison_fig.add_hline(y=0)
+
+    st.plotly_chart(comparison_fig, width="stretch")
+
+else:
+    st.write("Select players above to compare their scoring profiles.")
